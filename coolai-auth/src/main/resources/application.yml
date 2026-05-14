@@ -1,0 +1,59 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: coolai-auth
+  datasource:
+    url: jdbc:postgresql://localhost:5432/coolai
+    username: coolai
+    password: coolai123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 30000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: coolai
+    password: coolai123
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      logic-delete-field: isActive
+      logic-delete-value: false
+      logic-not-delete-value: true
+
+coolai:
+  jwt:
+    secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+    access-token-expiration: 3600000
+    refresh-token-expiration: 604800000
+
+logging:
+  level:
+    com.coolai: DEBUG
+    org.springframework.security: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always

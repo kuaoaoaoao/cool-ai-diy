@@ -1,0 +1,28 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: coolai-voice
+  datasource:
+    url: jdbc:postgresql://localhost:5432/coolai
+    username: coolai
+    password: coolai123
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: false
+
+coolai:
+  jwt:
+    secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+  voice:
+    xtts:
+      enabled: false
+      script-path: /opt/xtts/inference.py
+      python-path: python3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

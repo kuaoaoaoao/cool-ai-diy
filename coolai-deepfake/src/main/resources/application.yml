@@ -1,0 +1,28 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: coolai-deepfake
+  datasource:
+    url: jdbc:postgresql://localhost:5432/coolai
+    username: coolai
+    password: coolai123
+    driver-class-name: org.postgresql.Driver
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: coolai
+    password: coolai123
+  flyway:
+    enabled: false
+
+coolai:
+  jwt:
+    secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

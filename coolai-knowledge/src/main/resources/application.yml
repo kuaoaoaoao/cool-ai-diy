@@ -1,0 +1,27 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: coolai-knowledge
+  datasource:
+    url: jdbc:postgresql://localhost:5432/coolai
+    username: coolai
+    password: coolai123
+    driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  flyway:
+    enabled: false
+
+coolai:
+  jwt:
+    secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: coolai-postgres
+    environment:
+      POSTGRES_DB: coolai
+      POSTGRES_USER: coolai
+      POSTGRES_PASSWORD: coolai123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coolai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: coolai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: coolai-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: coolai
+      RABBITMQ_DEFAULT_PASS: coolai123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # Milvus - Standalone
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: coolai-etcd
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+      ETCD_SNAPSHOT_COUNT: "50000"
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+
+  minio:
+    image: minio/minio
+    container_name: coolai-minio
+    environment:
+      MINIO_ROOT_USER: coolai
+      MINIO_ROOT_PASSWORD: coolai12345
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  milvus:
+    image: milvusdb/milvus:v2.3.4
+    container_name: coolai-milvus
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+    depends_on:
+      - etcd
+      - minio
+
+  # Nacos
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: coolai-nacos
+    environment:
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: postgresql
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DB: nacos
+      POSTGRESQL_USER: coolai
+      POSTGRESQL_PASSWORD: coolai123
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus
+    container_name: coolai-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  # Grafana
+  grafana:
+    image: grafana/grafana
+    container_name: coolai-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  etcd_data:
+  minio_data:
+  milvus_data:
+  prometheus_data:
+  grafana_data:

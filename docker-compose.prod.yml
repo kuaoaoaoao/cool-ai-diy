@@ -1,0 +1,362 @@
+version: '3.8'
+
+# ============ 生产环境完整部署 ============
+# 使用方法: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  # ============ 反向代理 ============
+  nginx:
+    image: nginx:alpine
+    container_name: coolai-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - coolai-gateway
+    restart: always
+
+  # ============ API 网关 ============
+  coolai-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-gateway
+    container_name: coolai-gateway
+    environment:
+      SERVICE_NAME: coolai-gateway
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      JWT_SECRET: ${JWT_SECRET}
+      NACOS_ADDR: nacos:8848
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+
+  # ============ 认证服务 ============
+  coolai-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-auth
+    container_name: coolai-auth
+    environment:
+      SERVICE_NAME: coolai-auth
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ 聊天服务 ============
+  coolai-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-chat
+    container_name: coolai-chat
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ Agent 服务 ============
+  coolai-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-agent
+    container_name: coolai-agent
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      REDIS_HOST: redis
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}
+    restart: always
+
+  # ============ 知识库服务 ============
+  coolai-knowledge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-knowledge
+    container_name: coolai-knowledge
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      MILVUS_HOST: milvus
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: coolai
+      MINIO_SECRET_KEY: coolai12345
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ TTS 服务 ============
+  coolai-tts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-tts
+    container_name: coolai-tts
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      MINIO_ENDPOINT: http://minio:9000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ 声音克隆服务 ============
+  coolai-voice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-voice
+    container_name: coolai-voice
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      MINIO_ENDPOINT: http://minio:9000
+      COOLAI_VOICE_XTTS_ENABLED: ${COOLAI_VOICE_XTTS_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ AI 唱歌服务 ============
+  coolai-singing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-singing
+    container_name: coolai-singing
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      MINIO_ENDPOINT: http://minio:9000
+      COOLAI_SINGING_RVC_ENABLED: ${COOLAI_SINGING_RVC_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ 视频生成服务 ============
+  coolai-video:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-video
+    container_name: coolai-video
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      MINIO_ENDPOINT: http://minio:9000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      COOLAI_VIDEO_COGVIDEO_ENABLED: ${COOLAI_VIDEO_COGVIDEO_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ 人物替换服务 ============
+  coolai-deepfake:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-deepfake
+    container_name: coolai-deepfake
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      MINIO_ENDPOINT: http://minio:9000
+      COOLAI_DEEPFAKE_FACEFUSION_ENABLED: ${COOLAI_DEEPFAKE_FACEFUSION_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  # ============ 系统管理服务 ============
+  coolai-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: coolai-admin
+    container_name: coolai-admin
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    restart: always
+
+  # ============ GPU Worker (Python) ============
+  gpu-worker:
+    image: coolai/gpu-worker:latest
+    container_name: coolai-gpu-worker
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: coolai
+      RABBITMQ_PASSWORD: coolai123
+      MINIO_ENDPOINT: http://minio:9000
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - gpu_models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      - rabbitmq
+    restart: always
+    profiles:
+      - gpu
+
+  # ============ 基础设施 ============
+  postgres:
+    image: postgres:15-alpine
+    container_name: coolai-postgres
+    environment:
+      POSTGRES_DB: coolai
+      POSTGRES_USER: ${POSTGRES_USER:-coolai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coolai123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coolai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: coolai-redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: coolai-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-coolai}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-coolai123}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+
+  minio:
+    image: minio/minio
+    container_name: coolai-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-coolai}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-coolai12345}
+    volumes:
+      - minio_data:/data
+    command: minio server /data --console-address ":9001"
+    restart: always
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: coolai-etcd
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    restart: always
+
+  milvus:
+    image: milvusdb/milvus:v2.3.4
+    container_name: coolai-milvus
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    depends_on:
+      - etcd
+      - minio
+    restart: always
+
+  # ============ 监控 ============
+  prometheus:
+    image: prom/prometheus
+    container_name: coolai-prometheus
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    container_name: coolai-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  etcd_data:
+  minio_data:
+  milvus_data:
+  prometheus_data:
+  grafana_data:
+  gpu_models:

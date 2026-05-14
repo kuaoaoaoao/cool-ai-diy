@@ -1,0 +1,16 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: coolai-admin
+
+coolai:
+  jwt:
+    secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
