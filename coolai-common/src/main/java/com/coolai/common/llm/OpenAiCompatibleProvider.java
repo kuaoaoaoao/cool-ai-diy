@@ -24,8 +24,14 @@ public class OpenAiCompatibleProvider implements LlmProvider {
     @Value("${coolai.llm.openai.base-url:https://api.openai.com/v1}")
     private String baseUrl;
 
-    @Value("${coolai.llm.openai.models:gpt-4,gpt-3.5-turbo}")
+    @Value("${coolai.llm.openai.models:mimo-v2.5-pro}")
     private String models;
+
+    @Value("${coolai.llm.openai.embedding-enabled:false}")
+    private boolean embeddingEnabled;
+
+    @Value("${coolai.llm.openai.embedding-model:text-embedding-3-small}")
+    private String embeddingModel;
 
     public OpenAiCompatibleProvider(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -38,7 +44,7 @@ public class OpenAiCompatibleProvider implements LlmProvider {
 
     @Override
     public String getName() {
-        return "openai";
+        return "mimo";
     }
 
     @Override
@@ -48,7 +54,8 @@ public class OpenAiCompatibleProvider implements LlmProvider {
             body.put("model", request.model());
             body.put("messages", request.messages());
             body.put("temperature", request.temperature() > 0 ? request.temperature() : 0.7f);
-            body.put("max_tokens", request.maxTokens() > 0 ? request.maxTokens() : 2048);
+            int maxTokens = request.maxTokens() > 0 ? request.maxTokens() : 2048;
+            body.put("max_completion_tokens", maxTokens);
             if (request.tools() != null && !request.tools().isEmpty()) {
                 body.put("tools", request.tools());
             }
@@ -58,13 +65,15 @@ public class OpenAiCompatibleProvider implements LlmProvider {
             Request httpRequest = new Request.Builder()
                     .url(baseUrl + "/chat/completions")
                     .addHeader("Authorization", "Bearer " + apiKey)
+                    .addHeader("api-key", apiKey)
                     .addHeader("Content-Type", "application/json")
                     .post(RequestBody.create(json, MediaType.parse("application/json")))
                     .build();
 
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (!response.isSuccessful()) {
-                    throw new RuntimeException("OpenAI API error: " + response.code());
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    throw new RuntimeException("OpenAI compatible API error: " + response.code() + " " + errorBody);
                 }
                 String responseBody = response.body().string();
                 JsonNode root = objectMapper.readTree(responseBody);
@@ -83,8 +92,8 @@ public class OpenAiCompatibleProvider implements LlmProvider {
                 );
             }
         } catch (IOException e) {
-            log.error("OpenAI chat error", e);
-            throw new RuntimeException("Failed to call OpenAI API", e);
+            log.error("OpenAI compatible chat error", e);
+            throw new RuntimeException("Failed to call OpenAI compatible API", e);
         }
     }
 
@@ -95,13 +104,15 @@ public class OpenAiCompatibleProvider implements LlmProvider {
             body.put("model", request.model());
             body.put("messages", request.messages());
             body.put("temperature", request.temperature() > 0 ? request.temperature() : 0.7f);
-            body.put("max_tokens", request.maxTokens() > 0 ? request.maxTokens() : 2048);
+            int maxTokens = request.maxTokens() > 0 ? request.maxTokens() : 2048;
+            body.put("max_completion_tokens", maxTokens);
             body.put("stream", true);
 
             String json = objectMapper.writeValueAsString(body);
             Request httpRequest = new Request.Builder()
                     .url(baseUrl + "/chat/completions")
                     .addHeader("Authorization", "Bearer " + apiKey)
+                    .addHeader("api-key", apiKey)
                     .addHeader("Content-Type", "application/json")
                     .post(RequestBody.create(json, MediaType.parse("application/json")))
                     .build();
@@ -116,7 +127,8 @@ public class OpenAiCompatibleProvider implements LlmProvider {
                 public void onResponse(Call call, Response response) {
                     try (ResponseBody responseBody = response.body()) {
                         if (!response.isSuccessful() || responseBody == null) {
-                            callback.onError(new RuntimeException("API error: " + response.code()));
+                            String errorBody = responseBody != null ? responseBody.string() : "";
+                            callback.onError(new RuntimeException("API error: " + response.code() + " " + errorBody));
                             return;
                         }
                         // Process SSE stream
@@ -159,22 +171,26 @@ public class OpenAiCompatibleProvider implements LlmProvider {
 
     @Override
     public List<float[]> embeddings(List<String> texts) {
+        if (!embeddingEnabled) {
+            return localEmbeddings(texts);
+        }
         try {
             Map<String, Object> body = new HashMap<>();
             body.put("input", texts);
-            body.put("model", "text-embedding-3-small");
+            body.put("model", embeddingModel);
 
             String json = objectMapper.writeValueAsString(body);
             Request httpRequest = new Request.Builder()
                     .url(baseUrl + "/embeddings")
                     .addHeader("Authorization", "Bearer " + apiKey)
+                    .addHeader("api-key", apiKey)
                     .addHeader("Content-Type", "application/json")
                     .post(RequestBody.create(json, MediaType.parse("application/json")))
                     .build();
 
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (!response.isSuccessful()) {
-                    throw new RuntimeException("OpenAI Embedding API error: " + response.code());
+                    throw new RuntimeException("OpenAI compatible embedding API error: " + response.code());
                 }
                 String responseBody = response.body().string();
                 JsonNode root = objectMapper.readTree(responseBody);
@@ -192,18 +208,35 @@ public class OpenAiCompatibleProvider implements LlmProvider {
                 return embeddings;
             }
         } catch (IOException e) {
-            log.error("OpenAI embeddings error", e);
-            throw new RuntimeException("Failed to call OpenAI Embedding API", e);
+            log.error("OpenAI compatible embeddings error", e);
+            throw new RuntimeException("Failed to call OpenAI compatible embedding API", e);
         }
     }
 
     @Override
     public boolean isAvailable() {
-        return apiKey != null && !apiKey.isEmpty();
+        return apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("fake-");
     }
 
     @Override
     public List<String> listModels() {
         return Arrays.asList(models.split(","));
+    }
+
+    private List<float[]> localEmbeddings(List<String> texts) {
+        return texts.stream().map(text -> {
+            Random random = new Random(text != null ? text.hashCode() : 0);
+            float[] vector = new float[384];
+            float sum = 0;
+            for (int i = 0; i < vector.length; i++) {
+                vector[i] = (float) random.nextGaussian();
+                sum += vector[i] * vector[i];
+            }
+            float norm = (float) Math.sqrt(sum);
+            for (int i = 0; i < vector.length; i++) {
+                vector[i] /= norm;
+            }
+            return vector;
+        }).toList();
     }
 }

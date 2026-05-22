@@ -9,12 +9,31 @@ spring:
     username: coolai
     password: coolai123
     driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: coolai
+    password: coolai123
   flyway:
     enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
 
 coolai:
   jwt:
     secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+  minio:
+    enabled: true
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:coolai}
+    secret-key: ${MINIO_SECRET_KEY:coolai12345}
+    bucket: coolai
   voice:
     xtts:
       enabled: false

@@ -5,6 +5,7 @@ import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnBean(name = "minioClient")
 public class MinioStorageService {
 
     private final MinioClient minioClient;

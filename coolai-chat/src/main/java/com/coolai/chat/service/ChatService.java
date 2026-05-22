@@ -59,7 +59,7 @@ public class ChatService {
 
         // Call LLM
         LlmProvider.LlmRequest llmRequest = new LlmProvider.LlmRequest(
-                request.getModel() != null ? request.getModel() : "gpt-3.5-turbo",
+                request.getModel() != null ? request.getModel() : "mimo-v2.5-pro",
                 messages,
                 0.7f,
                 2048,
@@ -120,7 +120,7 @@ public class ChatService {
 
                 // Call LLM with streaming
                 LlmProvider.LlmRequest llmRequest = new LlmProvider.LlmRequest(
-                        request.getModel() != null ? request.getModel() : "gpt-3.5-turbo",
+                        request.getModel() != null ? request.getModel() : "mimo-v2.5-pro",
                         messages,
                         0.7f,
                         2048,

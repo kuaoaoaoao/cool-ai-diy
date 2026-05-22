@@ -44,7 +44,9 @@ public class OpenAiTtsEngine implements TtsEngine {
     public String getName() { return "openai_tts"; }
 
     @Override
-    public boolean isAvailable() { return apiKey != null && !apiKey.isEmpty(); }
+    public boolean isAvailable() {
+        return apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("fake-");
+    }
 
     @Override
     public TtsResult synthesize(TtsRequest request) {

@@ -4,7 +4,6 @@ import com.coolai.auth.service.JwtService;
 import com.coolai.auth.service.UserService;
 import com.coolai.common.model.ApiResponse;
 import com.coolai.model.dto.*;
-import com.coolai.model.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -44,14 +43,14 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "Get current user info")
-    public ApiResponse<User> getCurrentUser() {
+    public ApiResponse<UserProfileResponse> getCurrentUser() {
         String userId = getCurrentUserId();
         return ApiResponse.ok(userService.getCurrentUser(userId));
     }
 
     @PutMapping("/profile")
     @Operation(summary = "Update user profile")
-    public ApiResponse<User> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+    public ApiResponse<UserProfileResponse> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
         String userId = getCurrentUserId();
         return ApiResponse.ok(userService.updateProfile(userId, request));
     }
@@ -66,7 +65,7 @@ public class AuthController {
 
     @GetMapping("/api-keys")
     @Operation(summary = "Get API keys status")
-    public ApiResponse<Map<String, String>> getApiKeys() {
+    public ApiResponse<Map<String, ApiKeyStatus>> getApiKeys() {
         String userId = getCurrentUserId();
         return ApiResponse.ok(userService.getApiKeys(userId));
     }

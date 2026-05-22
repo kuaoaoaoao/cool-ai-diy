@@ -18,6 +18,17 @@
         <dependency>
             <groupId>com.coolai</groupId>
             <artifactId>coolai-common</artifactId>
+            <!-- 只排除 Servlet 容器，其他依赖保留以避免扫描时 ClassNotFoundException -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Lombok -->
@@ -27,10 +38,16 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Nacos Discovery -->
+        <!-- Nacos Discovery (optional) -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
         <!-- JWT -->

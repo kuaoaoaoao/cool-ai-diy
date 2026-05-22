@@ -25,6 +25,7 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
     echo "必要配置项:"
     echo "  - JWT_SECRET           (JWT密钥)"
     echo "  - OPENAI_API_KEY       (OpenAI API密钥)"
+    echo "  - MIMO_API_KEY         (小米 MiMo API 密钥，兼容 OpenAI API)"
     echo "  - ANTHROPIC_API_KEY    (Claude API密钥, 可选)"
     echo ""
     read -p "是否继续使用默认配置? (y/n) " -n 1 -r

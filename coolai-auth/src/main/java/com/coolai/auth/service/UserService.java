@@ -3,12 +3,15 @@ package com.coolai.auth.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.coolai.auth.mapper.UserMapper;
 import com.coolai.common.exception.BusinessException;
+import com.coolai.model.dto.ApiKeyStatus;
 import com.coolai.model.dto.AuthResponse;
 import com.coolai.model.dto.LoginRequest;
 import com.coolai.model.dto.ProfileUpdateRequest;
 import com.coolai.model.dto.RegisterRequest;
+import com.coolai.model.dto.UserProfileResponse;
 import com.coolai.model.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,21 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    @Value("${coolai.llm.openai.api-key:fake-mimo-api-key}")
+    private String defaultMimoApiKey;
+
+    @Value("${coolai.llm.anthropic.api-key:fake-anthropic-api-key}")
+    private String defaultAnthropicApiKey;
+
+    @Value("${coolai.mcp.tavily.api-key:fake-tavily-api-key}")
+    private String defaultTavilyApiKey;
+
+    @Value("${coolai.mcp.openweathermap.api-key:fake-openweathermap-api-key}")
+    private String defaultOpenWeatherMapApiKey;
+
+    @Value("${coolai.video.wanx.api-key:fake-wanx-api-key}")
+    private String defaultWanxApiKey;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -83,16 +101,16 @@ public class UserService {
         return jwtService.generateTokens(user.getId(), user.getUsername(), user.getRole());
     }
 
-    public User getCurrentUser(String userId) {
+    public UserProfileResponse getCurrentUser(String userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw BusinessException.notFound("User not found");
         }
-        return user;
+        return toProfileResponse(user);
     }
 
     @Transactional
-    public User updateProfile(String userId, ProfileUpdateRequest request) {
+    public UserProfileResponse updateProfile(String userId, ProfileUpdateRequest request) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw BusinessException.notFound("User not found");
@@ -110,7 +128,7 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
 
         userMapper.updateById(user);
-        return user;
+        return toProfileResponse(user);
     }
 
     @Transactional
@@ -132,16 +150,67 @@ public class UserService {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, String> getApiKeys(String userId) {
+    public Map<String, ApiKeyStatus> getApiKeys(String userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw BusinessException.notFound("User not found");
         }
 
         Map<String, Object> config = user.getConfig();
-        if (config == null || !config.containsKey("apiKeys")) {
-            return new HashMap<>();
+        Map<String, String> apiKeys = config != null && config.containsKey("apiKeys")
+                ? (Map<String, String>) config.get("apiKeys")
+                : new HashMap<>();
+
+        Map<String, ApiKeyStatus> statuses = new HashMap<>();
+        statuses.put("mimo", buildApiKeyStatus("mimo",
+                apiKeys.getOrDefault("mimo", apiKeys.getOrDefault("openai", defaultMimoApiKey))));
+        statuses.put("anthropic", buildApiKeyStatus("anthropic", apiKeys.getOrDefault("anthropic", defaultAnthropicApiKey)));
+        statuses.put("tavily", buildApiKeyStatus("tavily", apiKeys.getOrDefault("tavily", defaultTavilyApiKey)));
+        statuses.put("openweathermap", buildApiKeyStatus("openweathermap",
+                apiKeys.getOrDefault("openweathermap", defaultOpenWeatherMapApiKey)));
+        statuses.put("wanx", buildApiKeyStatus("wanx", apiKeys.getOrDefault("wanx", defaultWanxApiKey)));
+        return statuses;
+    }
+
+    private UserProfileResponse toProfileResponse(User user) {
+        Map<String, Object> safeConfig = user.getConfig() != null
+                ? new HashMap<>(user.getConfig())
+                : new HashMap<>();
+        safeConfig.remove("apiKeys");
+
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .isActive(user.getIsActive())
+                .config(safeConfig)
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+    }
+
+    private ApiKeyStatus buildApiKeyStatus(String provider, String value) {
+        boolean configured = value != null && !value.isBlank();
+        boolean placeholder = configured && value.startsWith("fake-");
+        return ApiKeyStatus.builder()
+                .provider(provider)
+                .configured(configured)
+                .placeholder(placeholder)
+                .maskedValue(maskApiKey(value))
+                .build();
+    }
+
+    private String maskApiKey(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
         }
-        return (Map<String, String>) config.get("apiKeys");
+        if (value.startsWith("fake-")) {
+            return value;
+        }
+        if (value.length() <= 8) {
+            return "****";
+        }
+        return value.substring(0, 4) + "****" + value.substring(value.length() - 4);
     }
 }

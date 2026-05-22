@@ -59,6 +59,9 @@ services:
       RABBITMQ_HOST: rabbitmq
       JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_CHAT_MODELS: ${MIMO_CHAT_MODELS:-mimo-v2.5-pro}
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,6 +82,9 @@ services:
       RABBITMQ_HOST: rabbitmq
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_CHAT_MODELS: ${MIMO_CHAT_MODELS:-mimo-v2.5-pro}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       postgres:
@@ -97,6 +103,9 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       REDIS_HOST: redis
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_CHAT_MODELS: ${MIMO_CHAT_MODELS:-mimo-v2.5-pro}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}
     restart: always
@@ -118,6 +127,9 @@ services:
       MINIO_ACCESS_KEY: coolai
       MINIO_SECRET_KEY: coolai12345
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_CHAT_MODELS: ${MIMO_CHAT_MODELS:-mimo-v2.5-pro}
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,6 +148,10 @@ services:
       POSTGRES_HOST: postgres
       MINIO_ENDPOINT: http://minio:9000
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_TTS_MODEL: ${MIMO_TTS_MODEL:-mimo-v2.5-tts}
+      MIMO_TTS_VOICE: ${MIMO_TTS_VOICE:-mimo_default}
     depends_on:
       postgres:
         condition: service_healthy
@@ -193,6 +209,9 @@ services:
       RABBITMQ_HOST: rabbitmq
       MINIO_ENDPOINT: http://minio:9000
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_CHAT_MODELS: ${MIMO_CHAT_MODELS:-mimo-v2.5-pro}
       COOLAI_VIDEO_COGVIDEO_ENABLED: ${COOLAI_VIDEO_COGVIDEO_ENABLED:-false}
     depends_on:
       postgres:
@@ -229,6 +248,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MIMO_API_KEY: ${MIMO_API_KEY:-}
+      MIMO_BASE_URL: ${MIMO_BASE_URL:-https://api.xiaomimimo.com/v1}
+      MIMO_CHAT_MODELS: ${MIMO_CHAT_MODELS:-mimo-v2.5-pro}
     restart: always
 
   # ============ GPU Worker (Python) ============

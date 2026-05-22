@@ -55,7 +55,7 @@ public class PlanExecuteAgent {
         );
 
         LlmProvider.LlmRequest request = new LlmProvider.LlmRequest(
-                model != null ? model : "gpt-3.5-turbo",
+                model != null ? model : "mimo-v2.5-pro",
                 messages,
                 0.3f,
                 1024,
@@ -119,7 +119,7 @@ public class PlanExecuteAgent {
         );
 
         LlmProvider.LlmRequest request = new LlmProvider.LlmRequest(
-                model != null ? model : "gpt-3.5-turbo",
+                model != null ? model : "mimo-v2.5-pro",
                 messages,
                 0.7f,
                 2048,

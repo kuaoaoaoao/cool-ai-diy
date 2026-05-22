@@ -26,7 +26,7 @@ public class AgentController {
             @RequestBody Map<String, String> request) {
         String userId = getCurrentUserId();
         String query = request.get("query");
-        String model = request.getOrDefault("model", "gpt-3.5-turbo");
+        String model = request.getOrDefault("model", "mimo-v2.5-pro");
         return ApiResponse.ok(agentService.execute(userId, query, model));
     }
 

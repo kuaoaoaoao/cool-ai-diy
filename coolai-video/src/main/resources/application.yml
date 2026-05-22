@@ -9,6 +9,10 @@ spring:
     username: coolai
     password: coolai123
     driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
   rabbitmq:
     host: localhost
     port: 5672
@@ -17,10 +21,27 @@ spring:
   flyway:
     enabled: false
 
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
 coolai:
   jwt:
     secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+  minio:
+    enabled: true
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:coolai}
+    secret-key: ${MINIO_SECRET_KEY:coolai12345}
+    bucket: coolai
+  llm:
+    openai:
+      api-key: ${MIMO_API_KEY:${OPENAI_API_KEY:sk-cd9tm31j1qvw0spb5ja0k3l83b25h7h2ss0kdkqr8znnxm4q}}
+      base-url: ${MIMO_BASE_URL:${OPENAI_BASE_URL:https://api.xiaomimimo.com/v1}}
   video:
+    wanx:
+      api-key: ${WANX_API_KEY:fake-wanx-api-key}
+      base-url: ${WANX_BASE_URL:https://dashscope.aliyuncs.com/api/v1}
     cogvideo:
       enabled: false
       script-path: /opt/cogvideo/inference.py

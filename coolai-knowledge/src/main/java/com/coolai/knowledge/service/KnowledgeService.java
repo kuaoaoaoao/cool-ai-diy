@@ -10,10 +10,8 @@ import com.coolai.knowledge.mapper.ChunkMapper;
 import com.coolai.model.entity.Document;
 import com.coolai.model.entity.KnowledgeBase;
 import com.coolai.model.entity.Chunk;
-import com.coolai.model.enums.TaskStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,6 @@ public class KnowledgeService {
     private final KnowledgeBaseMapper knowledgeBaseMapper;
     private final DocumentMapper documentMapper;
     private final ChunkMapper chunkMapper;
-    private final RabbitTemplate rabbitTemplate;
 
     @Transactional
     public KnowledgeBase createKnowledgeBase(String userId, String name, String description) {
@@ -79,6 +76,55 @@ public class KnowledgeService {
         // Delete knowledge base
         knowledgeBaseMapper.deleteById(kbId);
         log.info("Deleted knowledge base: {}", kbId);
+    }
+
+    @Transactional
+    public Document createDocument(String kbId, String userId, String filename, String fileType, long fileSize) {
+        KnowledgeBase kb = getKnowledgeBase(kbId, userId);
+
+        Document doc = new Document();
+        doc.setKbId(kbId);
+        doc.setFilename(filename);
+        doc.setFileType(fileType);
+        doc.setFileSize(fileSize);
+        doc.setStatus("processing");
+        doc.setCreatedAt(LocalDateTime.now());
+        documentMapper.insert(doc);
+
+        kb.setDocCount(kb.getDocCount() == null ? 1 : kb.getDocCount() + 1);
+        kb.setUpdatedAt(LocalDateTime.now());
+        knowledgeBaseMapper.updateById(kb);
+        return doc;
+    }
+
+    @Transactional
+    public void markDocumentProcessed(String docId, int chunkCount) {
+        Document doc = documentMapper.selectById(docId);
+        if (doc == null) {
+            throw BusinessException.notFound("Document not found");
+        }
+
+        doc.setStatus("processed");
+        doc.setProcessedAt(LocalDateTime.now());
+        documentMapper.updateById(doc);
+
+        KnowledgeBase kb = knowledgeBaseMapper.selectById(doc.getKbId());
+        if (kb != null) {
+            kb.setChunkCount(kb.getChunkCount() == null ? chunkCount : kb.getChunkCount() + chunkCount);
+            kb.setUpdatedAt(LocalDateTime.now());
+            knowledgeBaseMapper.updateById(kb);
+        }
+    }
+
+    @Transactional
+    public void markDocumentFailed(String docId) {
+        Document doc = documentMapper.selectById(docId);
+        if (doc == null) {
+            return;
+        }
+        doc.setStatus("failed");
+        doc.setProcessedAt(LocalDateTime.now());
+        documentMapper.updateById(doc);
     }
 
     public PageResult<Document> listDocuments(String kbId, String userId, int page, int pageSize) {

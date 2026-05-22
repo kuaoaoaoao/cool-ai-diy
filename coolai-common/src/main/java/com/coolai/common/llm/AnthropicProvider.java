@@ -191,7 +191,7 @@ public class AnthropicProvider implements LlmProvider {
 
     @Override
     public boolean isAvailable() {
-        return apiKey != null && !apiKey.isEmpty();
+        return apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("fake-");
     }
 
     @Override

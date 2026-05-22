@@ -4,6 +4,73 @@ server:
 spring:
   application:
     name: coolai-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+        auto-register: false
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            exposedHeaders:
+              - Authorization
+              - Content-Type
+            allowCredentials: false
+      routes:
+        - id: auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: chat-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/chat/**
+        - id: agent-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/v1/agent/**
+        - id: knowledge-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/knowledge/**
+        - id: tts-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/tts/**
+        - id: voice-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/voice/**
+        - id: singing-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/singing/**
+        - id: video-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/v1/video/**
+        - id: deepfake-service
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/v1/deepfake/**
+        - id: admin-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/v1/system/**
 
 coolai:
   jwt:

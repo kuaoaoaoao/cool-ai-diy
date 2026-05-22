@@ -3,12 +3,16 @@ package com.coolai.knowledge.service;
 import com.coolai.common.llm.LlmGatewayService;
 import com.coolai.common.llm.LlmProvider;
 import com.coolai.knowledge.chunker.TextChunker;
+import com.coolai.knowledge.mapper.ChunkMapper;
+import com.coolai.knowledge.mapper.DocumentMapper;
 import com.coolai.knowledge.parser.DocumentParser;
-import com.coolai.knowledge.search.RRFusion;
+import com.coolai.model.entity.Chunk;
+import com.coolai.model.entity.Document;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +24,8 @@ public class RagPipeline {
     private final LlmGatewayService llmGatewayService;
     private final List<DocumentParser> parsers;
     private final List<TextChunker> chunkers;
+    private final ChunkMapper chunkMapper;
+    private final DocumentMapper documentMapper;
 
     /**
      * RAG Query: Retrieve relevant chunks and generate answer
@@ -49,7 +55,7 @@ public class RagPipeline {
         );
 
         LlmProvider.LlmRequest request = new LlmProvider.LlmRequest(
-                model != null ? model : "gpt-3.5-turbo",
+                model != null ? model : "mimo-v2.5-pro",
                 messages,
                 0.7f,
                 2048,
@@ -65,16 +71,37 @@ public class RagPipeline {
      * Retrieve relevant chunks for a query (simplified)
      */
     private List<String> retrieve(String query, String knowledgeBaseId) {
-        // In production, this would use Milvus vector store for semantic search
-        // and Elasticsearch for BM25 text search, then fuse with RRF
         log.info("Retrieving chunks for query in KB: {}", knowledgeBaseId);
-        return List.of("Sample chunk 1", "Sample chunk 2");
+        List<String> docIds = documentMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Document>()
+                        .eq(Document::getKbId, knowledgeBaseId))
+                .stream()
+                .map(Document::getId)
+                .toList();
+        if (docIds.isEmpty()) {
+            return List.of("The knowledge base has no indexed documents yet.");
+        }
+
+        List<Chunk> chunks = chunkMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Chunk>()
+                .in(Chunk::getDocId, docIds)
+                .orderByAsc(Chunk::getChunkIndex)
+                .last("LIMIT 8"));
+
+        if (chunks.isEmpty()) {
+            return List.of("The knowledge base has no indexed chunks yet.");
+        }
+
+        String normalizedQuery = query == null ? "" : query.toLowerCase(Locale.ROOT);
+        return chunks.stream()
+                .sorted(Comparator.comparingInt(chunk -> scoreChunk(chunk.getContent(), normalizedQuery)))
+                .map(Chunk::getContent)
+                .limit(5)
+                .toList();
     }
 
     /**
      * Index a document: parse → chunk → embed → store
      */
-    public void indexDocument(byte[] fileData, String filename, String fileType, String knowledgeBaseId) {
+    public int indexDocument(byte[] fileData, String filename, String fileType, String knowledgeBaseId, String documentId) {
         // 1. Parse document
         DocumentParser parser = parsers.stream()
                 .filter(p -> p.supports(fileType))
@@ -97,7 +124,30 @@ public class RagPipeline {
 
         // 4. Store in vector store (simplified)
         log.info("Indexed {} chunks for document: {}", chunks.size(), filename);
+        for (int i = 0; i < chunks.size(); i++) {
+            Chunk chunk = new Chunk();
+            chunk.setDocId(documentId);
+            chunk.setContent(chunks.get(i));
+            chunk.setChunkIndex(i);
+            chunk.setVectorId("local-" + documentId + "-" + i);
+            chunk.setMetadata(Map.of(
+                    "filename", filename,
+                    "fileType", fileType,
+                    "embeddingDimension", embeddings.get(i).length
+            ));
+            chunk.setCreatedAt(LocalDateTime.now());
+            chunkMapper.insert(chunk);
+        }
+        return chunks.size();
     }
 
     public record RagResponse(String answer, List<String> sources, Map<String, Object> usage) {}
+
+    private int scoreChunk(String content, String normalizedQuery) {
+        if (content == null || normalizedQuery.isBlank()) {
+            return Integer.MAX_VALUE;
+        }
+        String lower = content.toLowerCase(Locale.ROOT);
+        return lower.contains(normalizedQuery) ? 0 : Math.abs(lower.length() - normalizedQuery.length());
+    }
 }

@@ -20,7 +20,9 @@ public class SoraApiEngine implements VideoEngine {
     public String getName() { return "sora_api"; }
 
     @Override
-    public boolean isAvailable() { return apiKey != null && !apiKey.isEmpty(); }
+    public boolean isAvailable() {
+        return apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("fake-");
+    }
 
     @Override
     public VideoResult generate(VideoEngineRequest request) {

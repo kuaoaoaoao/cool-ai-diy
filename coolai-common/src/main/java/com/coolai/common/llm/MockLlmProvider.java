@@ -15,7 +15,7 @@ public class MockLlmProvider implements LlmProvider {
 
     private static final String MOCK_RESPONSE = "你好！我是 CoolAI 助手（模拟模式）。\n\n" +
             "当前未接入真实 LLM API，这是模拟回复。\n" +
-            "要启用真实 AI 对话，请在配置中设置 OPENAI_API_KEY 或 ANTHROPIC_API_KEY。\n\n" +
+            "要启用真实 AI 对话，请在配置中设置 MIMO_API_KEY。\n\n" +
             "你可以通过以下方式体验项目功能：\n" +
             "1. 注册/登录 - 完整可用\n" +
             "2. 创建会话/发消息 - 使用模拟回复\n" +
@@ -135,7 +135,7 @@ public class MockLlmProvider implements LlmProvider {
             return "TTS 语音合成功能已就绪！你可以通过 TTS 模块体验 Edge-TTS 免费语音合成，无需 API Key。";
         }
         if (lower.contains("知识库") || lower.contains("rag") || lower.contains("文档")) {
-            return "RAG 知识库功能已就绪。你可以创建知识库、上传文档、进行知识检索。当前使用本地模拟嵌入，接入 OpenAI 后将提供语义级智能检索。";
+            return "RAG 知识库功能已就绪。你可以创建知识库、上传文档、进行知识检索。当前使用本地模拟嵌入，接入专用 Embedding 服务后将提供语义级智能检索。";
         }
         if (lower.contains("克隆") || lower.contains("声音") || lower.contains("voice")) {
             return "声音克隆功能已就绪。Edge-TTS 降级引擎始终可用，接入 GPU 后可启用 XTTS-v2 零样本克隆。";
@@ -167,8 +167,8 @@ public class MockLlmProvider implements LlmProvider {
                     - 人物替换（Mock示例）
 
                     🔑 需要API Key：
-                    - AI智能对话 → 需要 OPENAI_API_KEY
-                    - OpenAI TTS → 需要 OPENAI_API_KEY
+                    - AI智能对话 → 需要 MIMO_API_KEY
+                    - MiMo TTS → 需要 MIMO_API_KEY
                     - 网络搜索 → 需要 TAVILY_API_KEY
                     - 天气查询 → 需要 OPENWEATHERMAP_API_KEY
 

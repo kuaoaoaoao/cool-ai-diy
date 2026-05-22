@@ -44,7 +44,7 @@ public class OpenAiEmbeddingService implements EmbeddingService {
 
     @Override
     public boolean isAvailable() {
-        return apiKey != null && !apiKey.isEmpty();
+        return apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("fake-");
     }
 
     @Override

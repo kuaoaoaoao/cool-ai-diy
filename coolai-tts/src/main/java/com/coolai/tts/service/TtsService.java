@@ -33,7 +33,7 @@ public class TtsService {
     }
 
     public TtsTask synthesize(String userId, TtsRequest request) {
-        String engineName = request.getEngine() != null ? request.getEngine() : "edge_tts";
+        String engineName = request.getEngine() != null ? request.getEngine() : "mimo_v25_tts";
         TtsEngine engine = getEngine(engineName);
 
         // Create task record
@@ -62,13 +62,13 @@ public class TtsService {
     }
 
     public SseEmitter synthesizeStream(String userId, TtsRequest request) {
-        String engineName = request.getEngine() != null ? request.getEngine() : "edge_tts";
+        String engineName = request.getEngine() != null ? request.getEngine() : "mimo_v25_tts";
         TtsEngine engine = getEngine(engineName);
         return engine.synthesizeStream(request);
     }
 
     public List<Map<String, Object>> listVoices() {
-        TtsEngine engine = getEngine("edge_tts");
+        TtsEngine engine = getEngine("mimo_v25_tts");
         return engine.listVoices();
     }
 

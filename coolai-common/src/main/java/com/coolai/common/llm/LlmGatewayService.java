@@ -44,7 +44,7 @@ public class LlmGatewayService {
             log.warn("⚠️  未检测到真实 LLM Provider，已启用 Mock 模式");
             log.warn("   所有对话将返回模拟回复，不消耗 API 额度");
             log.warn("   要启用真实 AI 对话，请设置环境变量：");
-            log.warn("   OPENAI_API_KEY=sk-xxx 或 ANTHROPIC_API_KEY=sk-ant-xxx");
+            log.warn("   MIMO_API_KEY=sk-xxx 或 OPENAI_API_KEY=sk-xxx");
             log.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         } else {
             log.info("已注册 {} 个真实 LLM Provider + 1 个 Mock 回退", realProviderCount);

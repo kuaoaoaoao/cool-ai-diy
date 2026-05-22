@@ -24,7 +24,9 @@ public class WanxApiEngine implements VideoEngine {
     public String getName() { return "wanx_api"; }
 
     @Override
-    public boolean isAvailable() { return apiKey != null && !apiKey.isEmpty(); }
+    public boolean isAvailable() {
+        return apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("fake-");
+    }
 
     @Override
     public VideoResult generate(VideoEngineRequest request) {

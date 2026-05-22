@@ -4,10 +4,38 @@ server:
 spring:
   application:
     name: coolai-admin
+  datasource:
+    url: jdbc:postgresql://localhost:5432/coolai
+    username: coolai
+    password: coolai123
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: coolai
+    password: coolai123
+  flyway:
+    enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
 
 coolai:
   jwt:
     secret: coolai-java-secret-key-must-be-at-least-256-bits-long-for-hs256
+  llm:
+    openai:
+      api-key: ${MIMO_API_KEY:${OPENAI_API_KEY:sk-cd9tm31j1qvw0spb5ja0k3l83b25h7h2ss0kdkqr8znnxm4q}}
+      base-url: ${MIMO_BASE_URL:${OPENAI_BASE_URL:https://api.xiaomimimo.com/v1}}
+      models: ${MIMO_CHAT_MODELS:mimo-v2.5-pro}
+      embedding-enabled: false
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:fake-anthropic-api-key}
 
 management:
   endpoints:
